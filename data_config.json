@@ -1,0 +1,6 @@
+{
+    "dataset_name": "google_trace_time_series",
+    "train_ratio": 0.8,
+    "window_size": 20,
+    "attribute": "meanCPUUsage"
+}
