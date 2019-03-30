@@ -1,2 +1,1 @@
-# anfis-module
-My first thesis
+### ANFIS model
