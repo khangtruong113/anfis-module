@@ -41,17 +41,17 @@ def extract_data(raw_data: pd.DataFrame, window_size: int, attribute: str, train
 
     # Training data
     tmp_x_train = np.asarray(data[:train_size, :-1])
-    x_train_ = np.reshape(tmp_x_train, [tmp_x_train.shape[0], 1, tmp_x_train.shape[1]])
+    x_train_ = np.float32(np.reshape(tmp_x_train, [tmp_x_train.shape[0], 1, tmp_x_train.shape[1]]))
 
     tmp_y_train = np.asarray(data[:train_size, -1])
 
-    y_train_ = np.reshape(tmp_y_train, [tmp_y_train.shape[0], 1])
+    y_train_ = np.float32(np.reshape(tmp_y_train, [tmp_y_train.shape[0], 1]))
     # Test data
     tmp_x_test = np.asarray(data[train_size:, :-1])
     tmp_y_test = np.asarray(data[train_size:, -1])
 
-    x_test_ = np.reshape(tmp_x_test, [tmp_x_test.shape[0], 1, tmp_x_test.shape[1]])
-    y_test_ = np.reshape(tmp_y_test, [tmp_y_test.shape[0], 1])
+    x_test_ = np.float32(np.reshape(tmp_x_test, [tmp_x_test.shape[0], 1, tmp_x_test.shape[1]]))
+    y_test_ = np.float32(np.reshape(tmp_y_test, [tmp_y_test.shape[0], 1]))
     return x_train_, y_train_, x_test_, y_test_
 
 
