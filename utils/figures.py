@@ -27,3 +27,19 @@ class Figures:
         plt.legend()
         plt.savefig(path)
         plt.close()
+
+    @staticmethod
+    def compare_test_figures(predict: np.ndarray, actual: np.ndarray,
+                             predict_label: str, actual_label: str,
+                             path: str,
+                             title: str,
+                             ratio: 1.0):
+        sampling_length = round(len(predict)*ratio)
+        predict = predict[:sampling_length]
+        actual = actual[:sampling_length]
+        plt.plot(predict, label=predict_label)
+        plt.plot(actual, label=actual_label)
+        plt.title(title)
+        plt.legend()
+        plt.savefig(path)
+        plt.close()
