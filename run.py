@@ -1,3 +1,3 @@
-from executor.train.ANFIS import train, test
+from executor.train.train_anfis import train
 
-test()
+train()

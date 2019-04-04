@@ -8,7 +8,6 @@ from models.GenericModels import GenericModels
 from utils.anfisExternal import consequence_parameters, premise_parameters
 from utils.figures import Figures
 from utils.simulatedAnnealing import neighbor, sa_random, boltzmann_constants
-from utils.reports import Reports
 
 
 class ANFIS(GenericModels):
@@ -77,6 +76,16 @@ class ANFIS(GenericModels):
         :param tracking_loss:
         :return:
         """
+        self.name = "Original ANFIS"
+
+        print("==== TRAINING PHASE ====")
+        print("INFOMATION:")
+        print(f"Name: {self.name}")
+        print(f"Rule number: {self.rule_number}")
+        print(f"Window size: {self.window_size}")
+        print(f"Epoch: {epoch}")
+        print(f"Start training ...")
+
         x: tf.placeholder = tf.placeholder(dtype=tf.float32, shape=[None, 1, self.window_size])
         y = tf.placeholder(dtype=tf.float32, shape=[None, 1])
 
@@ -116,6 +125,7 @@ class ANFIS(GenericModels):
                 # Appending new loss values to track_list
                 if tracking_loss:
                     tracking_list = np.append(tracking_list, c)
+            print(f"Saving model to {saving_path} ...")
             saver.save(sess, save_path=saving_path)
 
         # Saving figures
@@ -125,13 +135,16 @@ class ANFIS(GenericModels):
         tracking_fig_path = f"{tracking_dir}/track.svg"
         tracking_data_path = f"{tracking_dir}/track.csv"
         tracking_fig_title = f"{self.name}: Rule number : {self.rule_number} Window size : {self.window_size}"
+        print(f"Saving tracking figures to {tracking_fig_path}")
         Figures.track(data=tracking_list, data_label="Loss function",
                       first_label='epoch', second_label='MSE',
                       path=tracking_fig_path,
                       title=tracking_fig_title)
 
         # Saving tracking data
+        print(f"Saving tracking list to {tracking_data_path} ...")
         DataFrame(tracking_list).to_csv(path_or_buf=tracking_data_path, header=None)
+        print("Training completed!")
 
     def sa1_train(self,
                   x_train, y_train,
@@ -272,12 +285,9 @@ class ANFIS(GenericModels):
                                      ratio=0.3
                                      )
 
-        # Saving reports
-        reports_path = f"{result_dir}/../reports.json"
-        Reports.origin_anfis(name="Original ANFIS",
-                             rule_number=self.rule_number,
-                             window_size=self.window_size,
-                             mse=float(mse_point),
-                             dataset="Google Usage Resources",
-                             path=reports_path)
-
+    def lazy_reports(self):
+        """
+        TODO: Nothing :)0
+        :return:
+        """
+        pass

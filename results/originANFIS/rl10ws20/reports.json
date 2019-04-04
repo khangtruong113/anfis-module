@@ -1,7 +1,0 @@
-{
-  "name": "Original ANFIS" ,
-  "dataset": "Google Usage Resources" ,
-  "rule_number": 10 ,
-  "window_size": 20 ,
-  "mse": 0.28613582253456116
-}
