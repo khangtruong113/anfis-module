@@ -183,6 +183,7 @@ class ANFIS(GenericModels):
         print(f"Temperature initialized value: {temp_init}")
         print(f"Epoch: {epoch}")
         print(f"Start training ...")
+
         # Creating Placeholder
         x = tf.placeholder(dtype=tf.float32, shape=[None, 1, self.window_size])
         y = tf.placeholder(dtype=tf.float32, shape=[None, 1])
@@ -214,45 +215,45 @@ class ANFIS(GenericModels):
                 shuffle = np.random.permutation(np.arange(len(y_train)))
                 x_train = x_train[shuffle]
                 y_train = y_train[shuffle]
-
                 sess.run(optimizer, feed_dict={x: x_train, y: y_train})
                 for i in np.arange(0, len(y_train) // batch_size):
+
                     start = i * batch_size
                     batch_x = x_train[start:start + batch_size]
                     batch_y = y_train[start:start + batch_size]
                     sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
 
                 # SA phase for all parameters
-                    previous_parameters = self.w_fuzz, self.weights, self.bias
-                    temp = temp_init
-                    f0 = sess.run(cost, feed_dict={x: x_train, y: y_train})
+                previous_parameters = self.w_fuzz, self.weights, self.bias
+                temp = temp_init
+                f0 = sess.run(cost, feed_dict={x: x_train, y: y_train})
 
-                    for n in range(neighbor_number):
-                        sess.run(self.w_fuzz['mu'].assign(neighbor(self.w_fuzz['mu'])))
-                        sess.run(self.w_fuzz['sigma'].assign(neighbor(self.w_fuzz['sigma'])))
-                        sess.run(self.weights.assign(neighbor(self.weights)))
-                        sess.run(self.bias.assign(neighbor(self.bias)))
-                        f = sess.run(cost, feed_dict={x: batch_x, y: batch_y})
-                        if f < f0:
+                for n in range(neighbor_number):
+                    sess.run(self.w_fuzz['mu'].assign(neighbor(self.w_fuzz['mu'])))
+                    sess.run(self.w_fuzz['sigma'].assign(neighbor(self.w_fuzz['sigma'])))
+                    sess.run(self.weights.assign(neighbor(self.weights)))
+                    sess.run(self.bias.assign(neighbor(self.bias)))
+                    f = sess.run(cost, feed_dict={x: batch_x, y: batch_y})
+                    if f < f0:
+                        f_new = f
+                        previous_parameters = self.w_fuzz, self.weights, self.bias
+                    else:
+                        df = f - f0
+                        r = sa_random(0, 1)
+                        if r > np.exp(-df / boltzmann_constants() / temp):
                             f_new = f
                             previous_parameters = self.w_fuzz, self.weights, self.bias
                         else:
-                            df = f - f0
-                            r = sa_random(0, 1)
-                            if r > np.exp(-df / boltzmann_constants() / temp):
-                                f_new = f
-                                previous_parameters = self.w_fuzz, self.weights, self.bias
-                            else:
-                                f_new = f0
-                                self.w_fuzz, self.weights, self.bias = previous_parameters
-                        f0 = f_new
-                        temp = reduce_factor * temp
-            # Loss value
-            c = sess.run(cost, feed_dict={x: x_train, y: y_train})
+                            f_new = f0
+                            self.w_fuzz, self.weights, self.bias = previous_parameters
+                    f0 = f_new
+                    temp = reduce_factor * temp
+                # Loss value
+                c = sess.run(cost, feed_dict={x: x_train, y: y_train})
 
-            # Appened new loss value to track_list
-            if tracking_loss:
-                tracking_list = np.append(tracking_list, c)
+                # Appened new loss value to track_list
+                if tracking_loss:
+                    tracking_list = np.append(tracking_list, c)
 
             print(f"Saving model to {saving_path} ...")
             saver.save(sess, save_path=saving_path)
@@ -284,60 +285,71 @@ class ANFIS(GenericModels):
                   neighbor_number=10,
                   reduce_factor=0.95,
                   temp_init=100,
-                  batch_size: int = 50
+                  batch_size: int = 50,
                   ):
         """
                 On epoch: GD All parameters -> SA consequence parameters
-                :type tracking_path: object
+                :param batch_size:
                 :param neighbor_number:
                 :param temp_init:
                 :param x_train:
                 :param y_train:
-                :param x_test:
-                :param y_test:
                 :param epoch:
                 :param rate:
                 :param tracking_loss:
-                :param load_path:
                 :param reduce_factor:
-                :param save_path:
                 :return:
                 """
-        writer("=========================")
-        writer("=======SA2-TRAINING======")
+
+        self.name = "SA2-ANFIS"
+        print("==== TRAINING PHASE ====")
+        print("INFOMATION:")
+        print(f"Name: {self.name}")
+        print(f"Rule number: {self.rule_number}")
+        print(f"Window size: {self.window_size}")
+        print(f"Neighbor number: {neighbor_number}")
+        print(f"Reduce factor: {reduce_factor}")
+        print(f"Temperature initialized value: {temp_init}")
+        print(f"Epoch: {epoch}")
+        print(f"Start training ...")
+
         # Creating Placeholder
-        writer("Creating Placeholder ... ")
         x = tf.placeholder(dtype=tf.float32, shape=[None, 1, self.window_size])
         y = tf.placeholder(dtype=tf.float32, shape=[None, 1])
 
         # Creating cost and optimizer
-        writer("Creating cost and optimizer")
         cost = tf.reduce_mean(tf.squared_difference(self.output(x), y))
         optimizer = tf.train.AdamOptimizer(learning_rate=rate).minimize(cost)
 
         saver = tf.train.Saver()
 
-        # Check tracking_loss flags
-        track_list = np.empty((0,))
+        # Saving diretory
+        saving_dir: str = f"metadata/models/sa2ANFIS/rl{self.rule_number}ws{self.window_size}"
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        saving_path: str = f"{saving_dir}/model.h5"
 
-        # Something for check best point
-        minimun_mse = 20000
+        # Check tracking_loss flags
+        tracking_list = np.empty((0,))
 
         # Initializing session
         with tf.Session() as sess:
 
-            # Check Model path Loading
-            if load_path is not None:
-                saver.restore(sess, load_path)
-
             # Start training
             sess.run(tf.global_variables_initializer())
-            writer("Starting train ... ")
             for e in range(1, epoch + 1):
                 # GD phase for all parameters
+                # Shuffle training data
+                shuffle = np.random.permutation(np.arange(len(y_train)))
+                x_train = x_train[shuffle]
+                y_train = y_train[shuffle]
                 sess.run(optimizer, feed_dict={x: x_train, y: y_train})
-                c = sess.run(cost, feed_dict={x: x_train, y: y_train})
-                point = sess.run(cost, feed_dict={x: x_test, y: y_test})
+                for i in np.arange(0, len(y_train) // batch_size):
+
+                    start = i * batch_size
+                    batch_x = x_train[start:start + batch_size]
+                    batch_y = y_train[start:start + batch_size]
+                    sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
 
                 # SA phase for all parameters
                 previous_parameters = self.w_fuzz, self.weights, self.bias
@@ -353,8 +365,8 @@ class ANFIS(GenericModels):
                         previous_parameters = self.w_fuzz, self.weights, self.bias
                     else:
                         df = f - f0
-                        r = random(0, 1)
-                        if r > np.exp(-df / Boltzmann / temp):
+                        r = sa_random(0, 1)
+                        if r > np.exp(-df / boltzmann_constants() / temp):
                             f_new = f
                             previous_parameters = self.w_fuzz, self.weights, self.bias
                         else:
@@ -363,33 +375,158 @@ class ANFIS(GenericModels):
                     f0 = f_new
                     temp = reduce_factor * temp
 
+                # Loss value
+                c = sess.run(cost, feed_dict={x: x_train, y: y_train})
+
                 # Appened new loss value to track_list
                 if tracking_loss:
-                    track_list = np.append(track_list, c)
-                if point < minimun_mse:
-                    minimun_mse = point
-                    if save_path is not None:
-                        saver.save(sess, save_path)
-                writer(f"{e}: {c}")
+                    tracking_list = np.append(tracking_list, c)
 
-            # Check save_path
-            if save_path is not None:
-                saver.save(sess, save_path)
+            print(f"Saving model to {saving_path} ...")
+            saver.save(sess, save_path=saving_path)
+
         # Saving figures
-        track_fig_path = f"{tracking_path}/tracking.svg"
-        track_data_path = f"{tracking_path}/tracking.csv"
-        track_fig_title = f"{self.name} : Rule number  = {self.rule_number}"
-        writer(f"Saving tracking figures to {track_fig_path} ")
-        save_figures(data=track_list, label="Loss_function",
-                     x_label='epoch', y_label='MSE',
-                     path=track_fig_path,
-                     title=track_fig_title,
-                     )
+        tracking_dir = f"results/sa2ANFIS/rl{self.rule_number}ws{self.window_size}/tracks"
+        tracking_fig_path = f"{tracking_dir}/track.svg"
+        tracking_data_path = f"{tracking_dir}/track.csv"
+        tracking_fig_title = f"{self.name}: Rule number : {self.rule_number} Window size : {self.window_size}"
+        print(f"Saving tracking figures to {tracking_fig_path}")
+        Figures.track(data=tracking_list, data_label="Loss function",
+                      first_label='epoch', second_label='MSE',
+                      path=tracking_fig_path,
+                      title=tracking_fig_title)
 
-        pd.DataFrame(track_list).to_csv(path_or_buf=track_data_path, header=None)
-        # return self.loss(x_test, y_test, save_path)
-        return minimun_mse
+        # Saving tracking data
+        print(f"Saving tracking list to {tracking_data_path} ...")
+        DataFrame(tracking_list).to_csv(path_or_buf=tracking_data_path, header=None)
+        print("Training completed!")
 
+    def sa3_train(self,
+                  x_train, y_train,
+                  epoch: int = 10000, rate=1e-2,
+                  tracking_loss=None,
+                  neighbor_number=10,
+                  reduce_factor=0.95,
+                  temp_init=100,
+                  batch_size: int = 50,
+                  ):
+        """
+                On epoch: GD All parameters -> SA premise parameters
+                :param batch_size:
+                :param neighbor_number:
+                :param temp_init:
+                :param x_train:
+                :param y_train:
+                :param epoch:
+                :param rate:
+                :param tracking_loss:
+                :param reduce_factor:
+                :return:
+                """
+        self.name = "SA3-ANFIS"
+        print("==== TRAINING PHASE ====")
+        print("INFOMATION:")
+        print(f"Name: {self.name}")
+        print(f"Rule number: {self.rule_number}")
+        print(f"Window size: {self.window_size}")
+        print(f"Neighbor number: {neighbor_number}")
+        print(f"Reduce factor: {reduce_factor}")
+        print(f"Temperature initialized value: {temp_init}")
+        print(f"Epoch: {epoch}")
+        print(f"Start training ...")
+
+        # Creating Placeholder
+        x = tf.placeholder(dtype=tf.float32, shape=[None, 1, self.window_size])
+        y = tf.placeholder(dtype=tf.float32, shape=[None, 1])
+
+        # Creating cost and optimizer
+        cost = tf.reduce_mean(tf.squared_difference(self.output(x), y))
+        optimizer = tf.train.AdamOptimizer(learning_rate=rate).minimize(cost)
+
+        saver = tf.train.Saver()
+
+        # Saving diretory
+        saving_dir: str = f"metadata/models/sa3ANFIS/rl{self.rule_number}ws{self.window_size}"
+        if not os.path.exists(saving_dir):
+            os.makedirs(saving_dir)
+        saving_path: str = f"{saving_dir}/model.h5"
+
+        # Check tracking_loss flags
+        tracking_list = np.empty((0,))
+
+        # Initializing session
+        with tf.Session() as sess:
+
+            # Start training
+            sess.run(tf.global_variables_initializer())
+            for e in range(1, epoch + 1):
+                # GD phase for all parameters
+                # Shuffle training data
+                shuffle = np.random.permutation(np.arange(len(y_train)))
+                x_train = x_train[shuffle]
+                y_train = y_train[shuffle]
+                sess.run(optimizer, feed_dict={x: x_train, y: y_train})
+                for i in np.arange(0, len(y_train) // batch_size):
+
+                    start = i * batch_size
+                    batch_x = x_train[start:start + batch_size]
+                    batch_y = y_train[start:start + batch_size]
+                    sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
+
+                # SA phase for all parameters
+                previous_parameters = self.w_fuzz, self.weights, self.bias
+                temp = temp_init
+                f0 = sess.run(cost, feed_dict={x: x_train, y: y_train})
+
+                for n in range(neighbor_number):
+                    sess.run(self.w_fuzz['mu'].assign(neighbor(self.w_fuzz['mu'])))
+                    sess.run(self.w_fuzz['sigma'].assign(neighbor(self.w_fuzz['sigma'])))
+
+                    f = sess.run(cost, feed_dict={x: x_train, y: y_train})
+                    if f < f0:
+                        f_new = f
+                        previous_parameters = self.w_fuzz, self.weights, self.bias
+                    else:
+                        df = f - f0
+                        r = sa_random(0, 1)
+                        if r > np.exp(-df / boltzmann_constants() / temp):
+                            f_new = f
+                            previous_parameters = self.w_fuzz, self.weights, self.bias
+                        else:
+                            f_new = f0
+                            self.w_fuzz, self.weights, self.bias = previous_parameters
+                    f0 = f_new
+                    temp = reduce_factor * temp
+
+                # Loss value
+                c = sess.run(cost, feed_dict={x: x_train, y: y_train})
+
+                # Appened new loss value to track_list
+                if tracking_loss:
+                    tracking_list = np.append(tracking_list, c)
+
+            print(f"Saving model to {saving_path} ...")
+            saver.save(sess, save_path=saving_path)
+
+            # Saving figures
+            tracking_dir = f"results/sa2ANFIS/rl{self.rule_number}ws{self.window_size}/tracks"
+
+            if not os.path.exists(tracking_dir):
+                os.makedirs(tracking_dir)
+
+            tracking_fig_path = f"{tracking_dir}/track.svg"
+            tracking_data_path = f"{tracking_dir}/track.csv"
+            tracking_fig_title = f"{self.name}: Rule number : {self.rule_number} Window size : {self.window_size}"
+            print(f"Saving tracking figures to {tracking_fig_path}")
+            Figures.track(data=tracking_list, data_label="Loss function",
+                          first_label='epoch', second_label='MSE',
+                          path=tracking_fig_path,
+                          title=tracking_fig_title)
+
+            # Saving tracking data
+            print(f"Saving tracking list to {tracking_data_path} ...")
+            DataFrame(tracking_list).to_csv(path_or_buf=tracking_data_path, header=None)
+            print("Training completed!")
 
     def test(self, x_test, y_test, name: str):
         print("==== TESTING PHASE ====")
@@ -446,10 +583,3 @@ class ANFIS(GenericModels):
                              dataset=DEFAULT_DATASET,
                              path=f"{result_dir}/reports.json"
                              )
-
-    def lazy_reports(self):
-        """
-        TODO: Nothing :)0
-        :return:
-        """
-        pass
