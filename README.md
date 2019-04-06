@@ -17,11 +17,11 @@ source activate anfis-module
 ## Cores
 1. Training ANFIS models
 ```
-python train_anfis.py
+python run_to_train.py
 ```
 2. Testing and writing to reports ANFIS models:
 ```
-python test_and_report_anfis.py
+python run_to_test_and_quick_reports.py
 ```
 
 ## Outputs
