@@ -1,0 +1,1 @@
+{"name": "ANFIS", "dataset": "Google Cloud Resource Usages", "rule_number": 15, "window_size": 20, "mse": 0.29283371567726135}

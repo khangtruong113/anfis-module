@@ -12,16 +12,16 @@ def train():
     # Origin ANFIS
     for item in RULE_NUMBER_LIST:
         model = ANFIS(rule_number=item, name='originANFIS')
-        model.sa1_train(x_train, y_train,
-                        batch_size=200, epoch=100,
-                        tracking_loss=True)
+        model.train(x_train, y_train,
+                    batch_size=200, epoch=1000,
+                    tracking_loss=True)
 
     print("===> SA1 ANFIS TRAIN ")
     # SA1 ANFIS
     for item in RULE_NUMBER_LIST:
         model = ANFIS(rule_number=item, name='sa1ANFIS')
         model.sa1_train(x_train, y_train,
-                        batch_size=200, epoch=100,
+                        batch_size=200, epoch=1000,
                         tracking_loss=True)
 
     print("===> SA2 ANFIS TRAIN ")
@@ -29,7 +29,7 @@ def train():
     for item in RULE_NUMBER_LIST:
         model = ANFIS(rule_number=item, name='sa2ANFIS')
         model.sa2_train(x_train, y_train,
-                        batch_size=200, epoch=100,
+                        batch_size=200, epoch=1000,
                         tracking_loss=True)
 
     print("===> SA3 ANFIS TRAIN ")
@@ -37,5 +37,5 @@ def train():
     for item in RULE_NUMBER_LIST:
         model = ANFIS(rule_number=item, name='sa3ANFIS')
         model.sa3_train(x_train, y_train,
-                        batch_size=200, epoch=100,
+                        batch_size=200, epoch=1000,
                         tracking_loss=True)
